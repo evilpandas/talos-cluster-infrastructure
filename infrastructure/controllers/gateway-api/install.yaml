@@ -1,6 +1,5 @@
 ---
-# Install Gateway API CRDs (standard channel - stable APIs)
-# https://gateway-api.sigs.k8s.io/guides/#installing-gateway-api
+# Install Gateway API CRDs directly from GitHub releases
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -9,31 +8,66 @@ metadata:
     app.kubernetes.io/name: gateway-api
 
 ---
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: GitRepository
+# Use a Job to install the CRDs from official release
+apiVersion: batch/v1
+kind: Job
 metadata:
-  name: gateway-api
+  name: install-gateway-api-crds
   namespace: gateway-system
 spec:
-  interval: 24h
-  url: https://github.com/kubernetes-sigs/gateway-api
-  ref:
-    tag: v1.2.2  # Latest stable as of March 2026
-  ignore: |
-    /*
-    !/config/crd
+  template:
+    spec:
+      serviceAccountName: gateway-api-installer
+      restartPolicy: OnFailure
+      containers:
+        - name: installer
+          image: bitnami/kubectl:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.2/standard-install.yaml
+  backoffLimit: 3
 
 ---
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
+# ServiceAccount for the installer job
+apiVersion: v1
+kind: ServiceAccount
 metadata:
-  name: gateway-api-crds
+  name: gateway-api-installer
   namespace: gateway-system
-spec:
-  interval: 12h
-  prune: false  # Don't auto-delete CRDs
-  sourceRef:
-    kind: GitRepository
-    name: gateway-api
-  path: ./config/crd/standard
-  wait: true
+
+---
+# ClusterRole to allow CRD installation
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: gateway-api-installer
+rules:
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["create", "get", "list", "update", "patch"]
+  - apiGroups: ["gateway.networking.k8s.io"]
+    resources: ["*"]
+    verbs: ["*"]
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "create"]
+  - apiGroups: ["admissionregistration.k8s.io"]
+    resources: ["validatingwebhookconfigurations"]
+    verbs: ["create", "get", "list", "update", "patch"]
+
+---
+# ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: gateway-api-installer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: gateway-api-installer
+subjects:
+  - kind: ServiceAccount
+    name: gateway-api-installer
+    namespace: gateway-system
