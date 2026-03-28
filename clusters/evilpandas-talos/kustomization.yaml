@@ -1,14 +1,11 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  # Flux will auto-generate flux-system/ directory with:
-  # - gotk-components.yaml
-  # - gotk-sync.yaml
-  # - kustomization.yaml
-  - flux-system
-
   # Our infrastructure
   - infrastructure.yaml
 
   # Our tenant applications
   - tenants.yaml
+
+# Note: flux-system is managed separately by Flux itself
+# Don't include it here as it creates circular dependencies
