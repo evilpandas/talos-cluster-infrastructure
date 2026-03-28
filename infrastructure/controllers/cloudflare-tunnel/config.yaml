@@ -6,9 +6,8 @@ metadata:
   namespace: cloudflare-tunnel
 data:
   config.yaml: |
-    # TODO: Replace <your-tunnel-id> with actual tunnel ID
-    # Get this by running: cloudflared tunnel create evilpandas-talos
-    tunnel: <your-tunnel-id>
+    # Tunnel ID from credentials
+    tunnel: 298df0fd-2215-4d2d-b5b0-9c54b0f06ae1
     credentials-file: /etc/cloudflared/creds/credentials.json
 
     # Metrics for monitoring
