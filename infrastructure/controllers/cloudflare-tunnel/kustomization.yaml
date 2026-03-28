@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: cloudflare-tunnel
+resources:
+  - namespace.yaml
+  - deployment.yaml
+  - config.yaml
+  # Note: cloudflared-credentials secret must be created manually
+  # kubectl create secret generic cloudflared-credentials \
+  #   --namespace=cloudflare-tunnel \
+  #   --from-file=credentials.json=/path/to/<tunnel-id>.json

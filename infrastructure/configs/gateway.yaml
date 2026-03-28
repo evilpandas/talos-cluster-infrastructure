@@ -1,0 +1,26 @@
+---
+# GatewayClass - defines the controller that implements the Gateway
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: nginx
+spec:
+  controllerName: k8s.io/ingress-nginx
+
+---
+# Main Gateway - entry point for all HTTP/HTTPS traffic
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: evilpandas-gateway
+  namespace: ingress-nginx
+spec:
+  gatewayClassName: nginx
+  listeners:
+    # HTTP listener (Cloudflare handles TLS termination)
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All  # Allow routes from all namespaces

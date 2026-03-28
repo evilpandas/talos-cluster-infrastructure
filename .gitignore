@@ -1,0 +1,33 @@
+# Flux will auto-generate some files
+clusters/*/flux-system/gotk-*.yaml
+
+# SOPS
+.sops.yaml.bak
+
+# Secrets (never commit unencrypted)
+*secret*.yaml
+!*secret*.enc.yaml
+!*-secret-*.yaml
+*.key
+*.pem
+*.crt
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary
+tmp/
+*.tmp
+*.bak
+
+# Kubeconfig (if accidentally copied here)
+kubeconfig
+*.kubeconfig

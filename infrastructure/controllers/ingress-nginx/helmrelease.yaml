@@ -1,0 +1,96 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: ingress-nginx
+  namespace: ingress-nginx
+spec:
+  interval: 24h
+  url: https://kubernetes.github.io/ingress-nginx
+
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: ingress-nginx
+  namespace: ingress-nginx
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: ingress-nginx
+      version: '>=4.11.0'
+      sourceRef:
+        kind: HelmRepository
+        name: ingress-nginx
+        namespace: ingress-nginx
+      interval: 12h
+  install:
+    crds: CreateReplace
+  upgrade:
+    crds: CreateReplace
+  values:
+    controller:
+      # Use ClusterIP - Cloudflare Tunnel connects directly
+      service:
+        type: ClusterIP
+        annotations: {}
+
+      # Enable Gateway API support
+      enableGatewayAPI: true
+
+      # Watch all namespaces for Gateway resources
+      watchIngressWithoutClass: false
+      ingressClassResource:
+        name: nginx
+        enabled: true
+        default: true
+        controllerValue: "k8s.io/ingress-nginx"
+
+      # Enable metrics for Prometheus
+      metrics:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+          additionalLabels:
+            release: prometheus
+
+      # Preserve client IP from Cloudflare
+      config:
+        use-forwarded-headers: "true"
+        compute-full-forwarded-for: "true"
+        use-proxy-protocol: "false"
+        # Trust Cloudflare IPs
+        proxy-real-ip-cidr: "173.245.48.0/20,103.21.244.0/22,103.22.200.0/22,103.31.4.0/22,141.101.64.0/18,108.162.192.0/18,190.93.240.0/20,188.114.96.0/20,197.234.240.0/22,198.41.128.0/17,162.158.0.0/15,104.16.0.0/13,104.24.0.0/14,172.64.0.0/13,131.0.72.0/22"
+        # Logging
+        log-format-upstream: '$remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent" $request_length $request_time [$proxy_upstream_name] [$proxy_alternative_upstream_name] $upstream_addr $upstream_response_length $upstream_response_time $upstream_status $req_id $host'
+
+      # Replica count
+      replicaCount: 2
+
+      # Resource limits
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+
+      # Admission webhooks
+      admissionWebhooks:
+        enabled: true
+
+    # Default backend (optional 404 page)
+    defaultBackend:
+      enabled: true
+      image:
+        repository: registry.k8s.io/defaultbackend-amd64
+        tag: "1.5"
+      resources:
+        requests:
+          cpu: 10m
+          memory: 20Mi
+        limits:
+          cpu: 50m
+          memory: 50Mi

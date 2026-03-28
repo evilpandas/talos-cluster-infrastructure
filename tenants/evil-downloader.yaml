@@ -1,0 +1,66 @@
+---
+# GitRepository - points to the evil-downloader app repo
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: evil-downloader
+  namespace: flux-system
+spec:
+  interval: 5m
+  url: https://github.com/your-username/evil-yt-dlp
+  ref:
+    branch: main
+  ignore: |
+    # Only watch kubernetes manifests
+    /*
+    !/apps
+    !/infrastructure/data
+
+---
+# Kustomization - deploys the PostgreSQL database
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: evil-downloader-infra
+  namespace: flux-system
+spec:
+  interval: 10m
+  retryInterval: 2m
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: evil-downloader
+  path: ./infrastructure/data
+  prune: false  # IMPORTANT: Don't auto-delete databases!
+  wait: true
+  dependsOn:
+    - name: infrastructure-controllers
+
+---
+# Kustomization - deploys the application
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: evil-downloader-app
+  namespace: flux-system
+spec:
+  interval: 5m
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: evil-downloader
+  path: ./apps/evil-downloader/overlays/production
+  prune: true
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: evil-downloader-web
+      namespace: evil-downloader
+    - apiVersion: gateway.networking.k8s.io/v1
+      kind: HTTPRoute
+      name: evil-downloader
+      namespace: evil-downloader
+  dependsOn:
+    - name: evil-downloader-infra
+    - name: infrastructure-configs  # Wait for Gateway to be created

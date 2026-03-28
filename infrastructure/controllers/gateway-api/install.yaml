@@ -1,0 +1,39 @@
+---
+# Install Gateway API CRDs (standard channel - stable APIs)
+# https://gateway-api.sigs.k8s.io/guides/#installing-gateway-api
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gateway-system
+  labels:
+    app.kubernetes.io/name: gateway-api
+
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: gateway-api
+  namespace: gateway-system
+spec:
+  interval: 24h
+  url: https://github.com/kubernetes-sigs/gateway-api
+  ref:
+    tag: v1.2.2  # Latest stable as of March 2026
+  ignore: |
+    /*
+    !/config/crd
+
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: gateway-api-crds
+  namespace: gateway-system
+spec:
+  interval: 12h
+  prune: false  # Don't auto-delete CRDs
+  sourceRef:
+    kind: GitRepository
+    name: gateway-api
+  path: ./config/crd/standard
+  wait: true
