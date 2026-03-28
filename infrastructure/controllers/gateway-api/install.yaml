@@ -1,73 +1,13 @@
 ---
-# Install Gateway API CRDs directly from GitHub releases
+# Gateway API CRDs - Installed manually via kubectl
+# kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml
+#
+# Note: These CRDs are already installed in the cluster.
+# This file just creates the namespace for organizational purposes.
+
 apiVersion: v1
 kind: Namespace
 metadata:
   name: gateway-system
   labels:
     app.kubernetes.io/name: gateway-api
-
----
-# Use a Job to install the CRDs from official release
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: install-gateway-api-crds
-  namespace: gateway-system
-spec:
-  template:
-    spec:
-      serviceAccountName: gateway-api-installer
-      restartPolicy: OnFailure
-      containers:
-        - name: installer
-          image: bitnami/kubectl:latest
-          command:
-            - /bin/sh
-            - -c
-            - |
-              kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml
-  backoffLimit: 3
-
----
-# ServiceAccount for the installer job
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: gateway-api-installer
-  namespace: gateway-system
-
----
-# ClusterRole to allow CRD installation
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: gateway-api-installer
-rules:
-  - apiGroups: ["apiextensions.k8s.io"]
-    resources: ["customresourcedefinitions"]
-    verbs: ["create", "get", "list", "update", "patch"]
-  - apiGroups: ["gateway.networking.k8s.io"]
-    resources: ["*"]
-    verbs: ["*"]
-  - apiGroups: [""]
-    resources: ["namespaces"]
-    verbs: ["get", "create"]
-  - apiGroups: ["admissionregistration.k8s.io"]
-    resources: ["validatingwebhookconfigurations"]
-    verbs: ["create", "get", "list", "update", "patch"]
-
----
-# ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: gateway-api-installer
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: gateway-api-installer
-subjects:
-  - kind: ServiceAccount
-    name: gateway-api-installer
-    namespace: gateway-system
