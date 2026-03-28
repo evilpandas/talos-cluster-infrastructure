@@ -30,10 +30,10 @@ spec:
   upgrade:
     crds: CreateReplace
   values:
-    # Enable monitoring
+    # Disable monitoring until Prometheus is installed
     monitoring:
-      enabled: true
-      podMonitorEnabled: true
+      enabled: false
+      podMonitorEnabled: false
 
     # Resource limits for operator
     resources:

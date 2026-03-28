@@ -47,13 +47,11 @@ spec:
         default: true
         controllerValue: "k8s.io/ingress-nginx"
 
-      # Enable metrics for Prometheus
+      # Disable metrics until Prometheus is installed
       metrics:
-        enabled: true
+        enabled: false
         serviceMonitor:
-          enabled: true
-          additionalLabels:
-            release: prometheus
+          enabled: false
 
       # Preserve client IP from Cloudflare
       config:
