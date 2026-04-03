@@ -13,5 +13,17 @@ data:
     # Metrics for monitoring
     metrics: 0.0.0.0:2000
 
-    # Ingress rules are managed via Cloudflare Zero Trust Dashboard
-    # Dashboard URL: https://one.dash.cloudflare.com/ -> Networks -> Tunnels
+    # Ingress rules - route traffic to ingress-nginx
+    # These rules take precedence over any dashboard configuration
+    ingress:
+      - hostname: dlp.evilpandas.com
+        service: http://ingress-nginx-controller.ingress-nginx.svc.cluster.local:80
+      - hostname: home.evilpandas.com
+        service: http://ingress-nginx-controller.ingress-nginx.svc.cluster.local:80
+      - hostname: status.evilpandas.com
+        service: http://ingress-nginx-controller.ingress-nginx.svc.cluster.local:80
+      - hostname: grafana.evilpandas.com
+        service: http://ingress-nginx-controller.ingress-nginx.svc.cluster.local:80
+      - hostname: prometheus.evilpandas.com
+        service: http://ingress-nginx-controller.ingress-nginx.svc.cluster.local:80
+      - service: http_status:404
